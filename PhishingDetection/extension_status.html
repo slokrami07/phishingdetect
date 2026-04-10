@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Status Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; }
+        .dashboard { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-active { background: #22c55e; }
+        .status-error { background: #ef4444; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .data-item { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+        .data-item:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .endpoint { background: #f3f4f6; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; margin: 4px 0; }
+        .refresh-btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-bottom: 20px; }
+        .refresh-btn:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>🔍 SentinelGuard Extension Status</h1>
+        <button class="refresh-btn" onclick="loadStatus()">🔄 Refresh Status</button>
+        
+        <div class="card">
+            <h2>📊 System Status</h2>
+            <div id="systemStatus"></div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>🔄 Current Processing</h3>
+                <div id="processingStatus"></div>
+            </div>
+            
+            <div class="card">
+                <h3>🌐 Network Intelligence</h3>
+                <div id="networkStatus"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🔗 API Endpoints</h3>
+            <div id="endpointsList"></div>
+        </div>
+        
+        <div class="card">
+            <h3>📝 Recent Extension Requests</h3>
+            <div id="recentRequests"></div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStatus() {
+            try {
+                const response = await fetch('http://localhost:5000/api/status');
+                const data = await response.json();
+                
+                // System Status
+                document.getElementById('systemStatus').innerHTML = `
+                    <div class="data-item">
+                        <span class="status-indicator ${data.status === 'active' ? 'status-active' : 'status-error'}"></span>
+                        <span class="label">Status:</span>
+                        <span class="value">${data.status.toUpperCase()}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">Extension Connected:</span>
+                        <span class="value">${data.extension_connected ? '✅ Yes' : '❌ No'}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">Network Intel Available:</span>
+                        <span class="value">${data.network_intel_available ? '✅ Yes' : '❌ No'}</span>
+                    </div>
+                `;
+                
+                // Current Processing
+                const processing = data.current_processing;
+                document.getElementById('processingStatus').innerHTML = `
+                    <div class="data-item">
+                        <span class="label">Queue Length:</span>
+                        <span class="value">${processing.queue_length}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">Last Activity:</span>
+                        <span class="value">${new Date(processing.last_activity).toLocaleString()}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">Running Scans:</span>
+                        <div class="value">
+                            ${processing.running_scans.length > 0 ? 
+                                processing.running_scans.map(scan => `<div>• ${scan}</div>`).join('') : 
+                                '<div>None</div>'
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                // Network Intelligence
+                const network = data.current_network_data;
+                document.getElementById('networkStatus').innerHTML = `
+                    <div class="data-item">
+                        <span class="label">Domain:</span>
+                        <span class="value">${network.domain}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">IP Address:</span>
+                        <span class="value">${network.ip}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">Scan Status:</span>
+                        <span class="value">${network.scan_status}</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">Location:</span>
+                        <span class="value">${network.geolocation.city || 'N/A'}, ${network.geolocation.country || 'N/A'}</span>
+                    </div>
+                `;
+                
+                // API Endpoints
+                const endpoints = data.api_endpoints;
+                document.getElementById('endpointsList').innerHTML = `
+                    <div class="endpoint">Quick Check: ${endpoints.quick_check}</div>
+                    <div class="endpoint">Deep Scan: ${endpoints.deep_scan}</div>
+                    <div class="endpoint">Feedback: ${endpoints.feedback}</div>
+                    <div class="endpoint">Status: ${endpoints.status}</div>
+                `;
+                
+                // Recent Requests
+                const requests = data.recent_extension_requests;
+                document.getElementById('recentRequests').innerHTML = `
+                    ${requests.length > 0 ? 
+                        requests.map(req => `<div class="data-item"><span class="value">${req}</span></div>`).join('') :
+                        '<div class="data-item"><span class="value">No recent requests</span></div>'
+                    }
+                `;
+                
+            } catch (error) {
+                document.querySelector('.dashboard').innerHTML = `
+                    <div class="card">
+                        <h2>❌ Error Loading Status</h2>
+                        <p>Make sure the Flask app is running on port 5000</p>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load status on page load
+        loadStatus();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadStatus, 30000);
+    </script>
+</body>
+</html>

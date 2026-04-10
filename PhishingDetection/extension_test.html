@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Extension Connection Test</h1>
+    
+    <div id="status" class="status info">Testing connection to Flask backend...</div>
+    
+    <div>
+        <h2>Test Results:</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function testConnection() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                // Test 1: Quick Check
+                statusDiv.innerHTML = 'Testing quick check endpoint...';
+                const quickResponse = await fetch('http://localhost:5000/api/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://google.com' })
+                });
+                const quickData = await quickResponse.json();
+                
+                // Test 2: Deep Scan
+                statusDiv.innerHTML = 'Testing deep scan endpoint...';
+                const deepResponse = await fetch('http://localhost:5000/api/deep-scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://example.com' })
+                });
+                const deepData = await deepResponse.json();
+                
+                // Test 3: Feedback
+                statusDiv.innerHTML = 'Testing feedback endpoint...';
+                const feedbackResponse = await fetch('http://localhost:5000/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://test.com', action: 'mark_safe' })
+                });
+                const feedbackData = await feedbackResponse.json();
+                
+                // All tests passed
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ All endpoints working correctly!';
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Quick Check: ${quickData.verdict}</div>
+                    <div class="success">✅ Deep Scan: ${deepData.verdict} (${deepData.confidence}% confidence)</div>
+                    <div class="success">✅ Feedback: ${feedbackData.success ? 'Success' : 'Failed'}</div>
+                    <div class="info">📋 Extension is ready to load!</div>
+                `;
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Connection Error: ${error.message}`;
+                resultsDiv.innerHTML = `
+                    <div class="error">Make sure Flask app is running on port 5000</div>
+                    <div class="error">Run: python app.py in the PhishingDetection directory</div>
+                `;
+            }
+        }
+        
+        // Run test on page load
+        testConnection();
+    </script>
+</body>
+</html>

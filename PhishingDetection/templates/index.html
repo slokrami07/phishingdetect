@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AntiPhish Intelligence Platform</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #map { height: 100%; width: 100%; border-radius: 0.5rem; z-index: 0; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <header class="flex justify-between items-center mb-8">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-xl shadow-lg shadow-blue-500/30">🛡️</div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">AntiPhish <span class="text-blue-500">Sentinel</span></h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest">AI-Powered Threat Intelligence</p>
+            </div>
+        </div>
+        <div class="flex gap-4">
+            <div class="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs font-medium text-emerald-400">System Online</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-4xl mx-auto mb-10 relative group">
+        <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+        <div class="relative flex bg-slate-900 rounded-lg p-1">
+            <input type="text" id="urlInput" placeholder="Enter suspicious URL for analysis..." 
+                class="w-full bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder-slate-500 outline-none"
+                value="https://google.com">
+            <button onclick="scanUrl()" id="scanBtn"
+                class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded-md font-medium transition-all shadow-lg shadow-blue-600/20">
+                Analyze
+            </button>
+        </div>
+    </div>
+
+    <div id="loader" class="hidden flex flex-col items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+        <p class="text-slate-400 animate-pulse">Deploying Sandbox & Analyzing Threats...</p>
+    </div>
+
+    <div id="resultsArea" class="grid grid-cols-12 gap-6 hidden opacity-0 transition-opacity duration-700">
+        
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+            <div id="verdictCard" class="glass-panel rounded-xl p-6 text-center relative overflow-hidden">
+                <div class="relative z-10">
+                    <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-2">Final Verdict</h3>
+                    <div id="verdictText" class="text-4xl font-black text-white mb-2">SAFE</div>
+                    <div class="w-full bg-slate-700/50 rounded-full h-2 mt-4 overflow-hidden">
+                        <div id="confidenceBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p id="confidenceText" class="text-xs text-slate-400 mt-2">Confidence Score: 0%</p>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-1 h-64 relative">
+                <div id="map"></div>
+                <div class="absolute bottom-2 left-2 bg-slate-900/80 px-2 py-1 rounded text-xs text-slate-300 z-10 border border-slate-700">
+                    📍 <span id="mapLabel">Unknown Location</span>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="text-slate-300 font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Network Intelligence
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-500">IP Address</span>
+                        <span id="hostIp" class="font-mono text-blue-300">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-500">ISP / ASN</span>
+                        <span id="hostIsp" class="text-right text-slate-300 truncate max-w-[150px]">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-700/50 pb-2">
+                        <span class="text-slate-500">Registrar</span>
+                        <span id="hostReg" class="text-right text-slate-300 truncate max-w-[150px]">---</span>
+                    </div>
+                    <div class="flex justify-between pt-1">
+                        <span class="text-slate-500">Created</span>
+                        <span id="hostDate" class="text-right text-slate-300">---</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-8 space-y-6">
+            
+            <div class="glass-panel rounded-xl p-1 relative group">
+                <div class="absolute top-4 left-4 bg-red-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm z-10 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE CRAWL
+                </div>
+                <div class="bg-slate-900 rounded-lg overflow-hidden aspect-video relative flex items-center justify-center border border-slate-700/50">
+                    <img id="screenshotImg" class="hidden w-full h-full object-cover transition-opacity duration-500" alt="Site Screenshot">
+                    <div id="screenshotPlaceholder" class="text-slate-600 flex flex-col items-center">
+                        <svg class="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                        <span class="text-sm">Screenshot will appear here</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="text-slate-300 font-semibold mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    AI Agent Reasoning
+                </h3>
+                <div class="bg-slate-800/50 rounded-lg p-4 border-l-4 border-purple-500">
+                    <p id="llmReasoning" class="text-slate-300 text-sm leading-relaxed">
+                        Ready to analyze. Waiting for input...
+                    </p>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="text-slate-300 font-semibold mb-4">DNS Configuration</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-800/50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 rounded-l-lg">Type</th>
+                                <th scope="col" class="px-4 py-3 rounded-r-lg">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dnsTableBody" class="text-slate-400">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- 1. Map Initialization ---
+        const map = L.map('map').setView([20, 0], 2); 
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        let currentMarker = null;
+
+        // --- 2. Data Injection ---
+        // We use 'try-catch' here to prevent crashes if server data is empty
+        try {
+            const serverData = {{ initial_data | tojson | safe }};
+            document.addEventListener("DOMContentLoaded", () => {
+                if (serverData && serverData.host_info && serverData.host_info.ip) {
+                    renderResults(serverData);
+                }
+            });
+        } catch (e) {
+            console.log("No initial data to load.");
+        }
+
+        // --- 3. Scan Function ---
+        async function scanUrl() {
+            const url = document.getElementById('urlInput').value;
+            const btn = document.getElementById('scanBtn');
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('resultsArea');
+
+            if(!url) return alert("Please enter a URL");
+
+            // UI Reset
+            results.classList.add('hidden');
+            results.classList.remove('opacity-100');
+            loader.classList.remove('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-pulse">Scanning...</span>';
+
+            try {
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url: url})
+                });
+
+                const data = await response.json();
+                if(data.error) throw new Error(data.error);
+
+                renderResults(data);
+
+            } catch (e) {
+                alert("Scan Failed: " + e.message);
+                console.error(e);
+            } finally {
+                loader.classList.add('hidden');
+                btn.disabled = false;
+                btn.innerHTML = 'Analyze';
+            }
+        }
+
+        // --- 4. Render Logic (FIXED IDs) ---
+        function renderResults(data) {
+            const results = document.getElementById('resultsArea');
+            if(results) {
+                results.classList.remove('hidden');
+                setTimeout(() => results.classList.add('opacity-100'), 50);
+            }
+
+            // Verdict & Score
+            const verdict = data.verdict || "UNKNOWN";
+            const isPhish = verdict.toUpperCase() === 'PHISHING' || verdict === 'malicious';
+            const isSafe = verdict.toUpperCase() === 'SAFE' || verdict === 'safe';
+            
+            // FIX: Use 'verdictCard' instead of 'verdictBanner'
+            const verdictCard = document.getElementById('verdictCard');
+            const verdictText = document.getElementById('verdictText');
+            const bar = document.getElementById('confidenceBar');
+            const confText = document.getElementById('confidenceText');
+            
+            if (verdictCard && verdictText) {
+                if (isPhish) {
+                    verdictCard.className = "glass-panel rounded-xl p-6 text-center relative overflow-hidden bg-red-900/20 border-red-500/30";
+                    verdictText.className = "text-4xl font-black text-red-500 mb-2";
+                    if(bar) bar.className = "bg-red-500 h-2 rounded-full transition-all duration-1000";
+                } else if (isSafe) {
+                    verdictCard.className = "glass-panel rounded-xl p-6 text-center relative overflow-hidden bg-emerald-900/20 border-emerald-500/30";
+                    verdictText.className = "text-4xl font-black text-emerald-400 mb-2";
+                    if(bar) bar.className = "bg-emerald-500 h-2 rounded-full transition-all duration-1000";
+                } else {
+                    verdictCard.className = "glass-panel rounded-xl p-6 text-center relative overflow-hidden bg-yellow-900/20 border-yellow-500/30";
+                    verdictText.className = "text-4xl font-black text-yellow-500 mb-2";
+                    if(bar) bar.className = "bg-yellow-500 h-2 rounded-full transition-all duration-1000";
+                }
+                verdictText.innerText = verdict.toUpperCase();
+            }
+
+            if(bar) bar.style.width = `${data.confidence || 0}%`;
+            if(confText) confText.innerText = `Risk Confidence: ${data.confidence || 0}%`;
+
+            // AI Reasoning
+            const reasoningEl = document.getElementById('llmReasoning');
+            if(reasoningEl) {
+                reasoningEl.innerText = data.ai_analysis && data.ai_analysis.llm_reasoning 
+                    ? data.ai_analysis.llm_reasoning 
+                    : "No AI analysis available for this target.";
+            }
+
+            // Network Info
+            const info = data.host_info || {};
+            const safeSetText = (id, val) => {
+                const el = document.getElementById(id);
+                if(el) el.innerText = val || '---';
+            };
+
+            safeSetText('hostIp', info.ip_address);
+            safeSetText('hostLoc', typeof info.geolocation === 'string' ? info.geolocation : '---');
+            safeSetText('hostIsp', info.isp);
+            safeSetText('hostReg', info.registrar);
+            safeSetText('hostDate', info.creation_date);
+
+            // Map Update
+            if (info.coordinates && info.coordinates.lat && info.coordinates.lon) {
+                const lat = info.coordinates.lat;
+                const lon = info.coordinates.lon;
+                map.setView([lat, lon], 10);
+                if (currentMarker) map.removeLayer(currentMarker);
+                currentMarker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`<b>Target Server</b><br>${info.geolocation}`).openPopup();
+                
+                safeSetText('mapLabel', info.geolocation);
+            }
+
+            // Screenshot
+            const img = document.getElementById('screenshotImg');
+            const placeholder = document.getElementById('screenshotPlaceholder');
+            
+            if(img && placeholder) {
+                if(data.screenshot_path) {
+                    img.src = data.screenshot_path;
+                    img.onload = () => {
+                        img.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    };
+                    img.onerror = () => {
+                        img.classList.add('hidden');
+                        placeholder.classList.remove('hidden');
+                    }
+                } else {
+                    img.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                }
+            }
+
+            // DNS Table
+            const dnsBody = document.getElementById('dnsTableBody');
+            if(dnsBody) {
+                dnsBody.innerHTML = '';
+                const dns = info.dns;
+                if(dns) {
+                    const addRow = (type, vals) => {
+                        if(!vals || vals.length === 0) return;
+                        vals.forEach(val => {
+                            dnsBody.innerHTML += `
+                                <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                                    <td class="px-4 py-2 font-mono font-bold text-slate-400">${type}</td>
+                                    <td class="px-4 py-2 font-mono text-slate-500 break-all text-xs">${val}</td>
+                                </tr>
+                            `;
+                        });
+                    };
+                    if (dns.A) addRow('A', dns.A);
+                    if (dns.MX) addRow('MX', dns.MX);
+                    if (dns.NS) addRow('NS', dns.NS);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

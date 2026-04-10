@@ -1,0 +1,13 @@
+{
+    "domain": "127.0.0.1:5000",
+    "ip": null,
+    "reverse_dns": "N/A",
+    "geolocation": {},
+    "whois": {},
+    "dns_records": {
+        "A": [],
+        "MX": [],
+        "NS": [],
+        "TXT": []
+    }
+}

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚫 Site Blocked | SentinelGuard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fef2f2; /* Light Red Background */
+            color: #1f2937;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 48px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            max-width: 550px;
+            width: 90%;
+            border: 1px solid #fee2e2;
+        }
+
+        .icon-wrapper {
+            margin-bottom: 24px;
+        }
+
+        .icon {
+            font-size: 64px;
+            line-height: 1;
+        }
+
+        h1 {
+            color: #dc2626; /* Red-600 */
+            margin: 0 0 12px 0;
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        p {
+            color: #4b5563; /* Gray-600 */
+            line-height: 1.6;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .url-box {
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            color: #dc2626;
+            word-break: break-all;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .primary-btn {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);
+        }
+
+        .primary-btn:hover {
+            background-color: #b91c1c; /* Red-700 */
+        }
+
+        .secondary-link {
+            display: block;
+            margin-top: 24px;
+            color: #9ca3af;
+            font-size: 13px;
+            text-decoration: underline;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+        }
+
+        .secondary-link:hover {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon-wrapper">
+            <span class="icon">🛑</span>
+        </div>
+        
+        <h1>Malicious Site Blocked</h1>
+        
+        <p>
+            SentinelGuard has prevented this page from loading. 
+            Our AI analysis identified this URL as a high-risk phishing threat attempting to steal your credentials.
+        </p>
+
+        <div id="blocked-url" class="url-box">Loading URL...</div>
+
+        <button class="primary-btn" id="go-back-btn">
+            Go Back to Safety
+        </button>
+
+        <button class="secondary-link" id="proceed-btn">
+            I understand the risks, proceed anyway (Unsafe)
+        </button>
+    </div>
+
+    <script>
+        // 1. Get the URL parameter (e.g., blocked.html?url=https://evil.com)
+        const params = new URLSearchParams(window.location.search);
+        const blockedUrl = params.get('url');
+
+        // 2. Display the URL safely
+        const urlDisplay = document.getElementById('blocked-url');
+        if (blockedUrl) {
+            urlDisplay.textContent = blockedUrl;
+        } else {
+            urlDisplay.textContent = "Unknown URL";
+        }
+
+        // 3. "Go Back" Button Logic
+        document.getElementById('go-back-btn').addEventListener('click', () => {
+            // Try to go back, otherwise close the tab
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.close();
+            }
+        });
+
+        // 4. "Proceed" Logic (Bypass)
+        document.getElementById('proceed-btn').addEventListener('click', () => {
+            if (blockedUrl) {
+                // Warning confirm
+                const confirmed = confirm("⚠️ ARE YOU SURE?\n\nThis site was flagged as malicious. Visiting it may compromise your security.\n\nClick OK to proceed at your own risk.");
+                if (confirmed) {
+                    window.location.href = blockedUrl;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

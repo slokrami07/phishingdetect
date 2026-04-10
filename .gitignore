@@ -1,0 +1,87 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environment Variables
+.env
+.env.local
+
+# Virtual Environments
+.venv/
+.venv1/
+.venv312/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Dependencies
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node modules
+node_modules/
+dist/
+build/
+
+# Nested git repositories / backups
+PhishingDetection/git/
+
+# Models and specific large datasets in this project
+*.csv
+*.arff
+*.pkl
+*.xgb
+*.db
+*.sqlite3
+
+# Logs and runtime data
+*.log
+scan_log.txt
+sandbox/output/
+sandbox_data/
+firefox_profile_data/
+_test.db
+scans.db
+test_history.db

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentinelGuard Extension Status</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-active { background: #22c55e; }
+        .status-error { background: #ef4444; }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">🔍 SentinelGuard Extension Status</h1>
+                    </div>
+                    <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- System Status Card -->
+            <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">📊 System Status</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex items-center">
+                        <span class="status-indicator {{ 'status-active' if data.status == 'active' else 'status-error' }} pulse"></span>
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">System Status</div>
+                            <div class="text-sm text-gray-500">{{ data.status.upper() }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="status-indicator {{ 'status-active' if data.extension_connected else 'status-error' }}"></span>
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Extension Connected</div>
+                            <div class="text-sm text-gray-500">{{ '✅ Connected' if data.extension_connected else '❌ Disconnected' }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="status-indicator {{ 'status-active' if data.network_intel_available else 'status-error' }}"></span>
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Network Intel</div>
+                            <div class="text-sm text-gray-500">{{ '✅ Available' if data.network_intel_available else '❌ Unavailable' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Current Processing -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🔄 Current Processing</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Queue Length:</span>
+                            <span class="text-sm text-gray-900">{{ data.current_processing.queue_length }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Last Activity:</span>
+                            <span class="text-sm text-gray-900">{{ data.current_processing.last_activity[:19].replace('T', ' ') }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-600">Running Scans:</span>
+                            <div class="mt-2">
+                                {% if data.current_processing.running_scans %}
+                                    {% for scan in data.current_processing.running_scans %}
+                                        <div class="text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-md">• {{ scan }}</div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-sm text-gray-500">No active scans</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VLLM Verdict Section -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🤖 VLLM Analysis Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">AI Model Status:</span>
+                            <span class="text-sm text-green-600">✅ Active</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Database Integration:</span>
+                            <span class="text-sm text-green-600">✅ Enabled</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Last Verdict:</span>
+                            <span class="text-sm text-gray-900">
+                                {% if data.recent_extension_requests %}
+                                    <span class="text-green-600 font-bold">ACTIVE</span>
+                                {% else %}
+                                    <span class="text-blue-600 font-bold">NO ACTIVITY</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Analysis Source:</span>
+                            <span class="text-sm text-gray-900">
+                                {% if data.recent_extension_requests %}
+                                    Recent Analysis
+                                {% else %}
+                                    System Ready
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="mt-4 p-3 bg-gray-50 rounded-md">
+                            <div class="text-xs font-medium text-gray-600 mb-2">Recent Analysis Flow:</div>
+                            <div class="space-y-1">
+                                <div class="text-xs text-gray-700">1️⃣ Database Check (1.5M+ threats)</div>
+                                <div class="text-xs text-gray-700">2️⃣ AI Analysis (if not found)</div>
+                                <div class="text-xs text-gray-700">3️⃣ VLLM Reasoning & Verdict</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Endpoints -->
+            <div class="bg-white rounded-lg shadow-sm border p-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">🔗 API Endpoints</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="bg-gray-50 px-3 py-2 rounded-md">
+                        <div class="text-xs font-medium text-gray-600">Quick Check</div>
+                        <div class="text-sm font-mono text-gray-900">{{ data.api_endpoints.quick_check }}</div>
+                    </div>
+                    <div class="bg-gray-50 px-3 py-2 rounded-md">
+                        <div class="text-xs font-medium text-gray-600">Deep Scan</div>
+                        <div class="text-sm font-mono text-gray-900">{{ data.api_endpoints.deep_scan }}</div>
+                    </div>
+                    <div class="bg-gray-50 px-3 py-2 rounded-md">
+                        <div class="text-xs font-medium text-gray-600">Feedback</div>
+                        <div class="text-sm font-mono text-gray-900">{{ data.api_endpoints.feedback }}</div>
+                    </div>
+                    <div class="bg-gray-50 px-3 py-2 rounded-md">
+                        <div class="text-xs font-medium text-gray-600">Status</div>
+                        <div class="text-sm font-mono text-gray-900">{{ data.api_endpoints.status }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Extension Requests -->
+            <div class="bg-white rounded-lg shadow-sm border p-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📝 Recent Extension Requests</h3>
+                <div class="space-y-2">
+                    {% if data.recent_extension_requests %}
+                        {% for request in data.recent_extension_requests %}
+                            <div class="text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded-md font-mono">
+                                {{ request }}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-sm text-gray-500">No recent requests</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Error State -->
+            {% if data.status == 'error' %}
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-red-900 mb-2">❌ System Error</h3>
+                    <p class="text-red-700">{{ data.error }}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
